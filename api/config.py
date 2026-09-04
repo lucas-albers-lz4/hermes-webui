@@ -1192,6 +1192,7 @@ _PROVIDER_DISPLAY = {
     "ollama-cloud": "Ollama Cloud",
     "opencode-zen": "OpenCode Zen",
     "opencode-go": "OpenCode Go",
+    "opencode-free": "OpenCode Free",
     "lmstudio": "LM Studio",
     "mistralai": "Mistral",
     "qwen": "Qwen",
@@ -1833,20 +1834,28 @@ _PROVIDER_MODELS = {
         {"id": "big-pickle", "label": "Big Pickle"},
     ],
     # OpenCode Go — flat-rate models via opencode.ai/go ($10/month).
-    # Synced 2026-07-08 from the public Go docs and documented models endpoint.
-    # Keep preview/free-only Zen models out of this Go picker snapshot.
+    # Synced 2026-09-03 from core hermes_cli/models.py "opencode-go" floor
+    # (which tracks live GET /zen/go/v1/models). Keep preview/free-only Zen
+    # models out of this Go picker snapshot. Local additions here survive
+    # hermes-agent upgrades that autostash dirty core copies — the seeder only
+    # backfills from core at import, so this static floor is the durable base.
     "opencode-go": [
         {"id": "minimax-m3",       "label": "MiniMax M3"},
         {"id": "minimax-m2.7",     "label": "MiniMax M2.7"},
         {"id": "minimax-m2.5",     "label": "MiniMax M2.5"},
+        {"id": "kimi-k3",          "label": "Kimi K3"},
         {"id": "kimi-k2.7-code",   "label": "Kimi K2.7 Code"},
         {"id": "kimi-k2.6",        "label": "Kimi K2.6"},
         {"id": "kimi-k2.5",        "label": "Kimi K2.5"},
+        {"id": "gpt-5.6-luna",     "label": "GPT-5.6 Luna"},
+        {"id": "glm-5.3",          "label": "GLM-5.3"},
+        {"id": "glm-5.3-flash",    "label": "GLM-5.3 Flash"},
         {"id": "glm-5.2",          "label": "GLM-5.2"},
         {"id": "glm-5.1",          "label": "GLM-5.1"},
         {"id": "glm-5",            "label": "GLM-5"},
         {"id": "deepseek-v4-pro",  "label": "DeepSeek V4 Pro"},
         {"id": "deepseek-v4-flash","label": "DeepSeek V4 Flash"},
+        {"id": "qwen3.8-max",      "label": "Qwen3.8 Max"},
         {"id": "qwen3.7-max",      "label": "Qwen3.7 Max"},
         {"id": "qwen3.7-plus",     "label": "Qwen3.7 Plus"},
         {"id": "qwen3.6-plus",     "label": "Qwen3.6 Plus"},
@@ -1855,6 +1864,26 @@ _PROVIDER_MODELS = {
         {"id": "mimo-v2-omni",     "label": "MiMo V2 Omni"},
         {"id": "mimo-v2.5-pro",    "label": "MiMo V2.5 Pro"},
         {"id": "mimo-v2.5",        "label": "MiMo V2.5"},
+        {"id": "hy3",              "label": "Hy3"},
+        {"id": "hy3-preview",      "label": "Hy3 Preview"},
+        {"id": "muse-spark-1.2-contributor", "label": "Muse Spark 1.2 Contributor"},
+        {"id": "muse-spark-1.3-contributor", "label": "Muse Spark 1.3 Contributor"},
+        {"id": "ox-alpha-free",    "label": "Ox Alpha (free)"},
+    ],
+    # OpenCode Free — keyless zen free tier (no account/key needed). The
+    # picker group prefers the LIVE revalidated catalog (muse-spark-1.3-* etc.
+    # appear without a release); this static floor keeps the group populated
+    # when the zen relay is unreachable. Floor synced 2026-09-03 from live
+    # GET https://opencode.ai/zen/v1/models (anonymous-servable *-free tier).
+    "opencode-free": [
+        {"id": "deepseek-v4-flash-free",        "label": "DeepSeek V4 Flash (free)"},
+        {"id": "hy3-free",                      "label": "Hy3 (free)"},
+        {"id": "mimo-v2.5-free",                "label": "MiMo V2.5 (free)"},
+        {"id": "laguna-s-2.1-free",             "label": "Laguna S 2.1 (free)"},
+        {"id": "nemotron-3-ultra-free",         "label": "Nemotron 3 Ultra (free)"},
+        {"id": "nemotron-3.5-lightning-free",   "label": "Nemotron 3.5 Lightning (free)"},
+        {"id": "muse-spark-1.2-contributor-free", "label": "Muse Spark 1.2 Contributor (free)"},
+        {"id": "muse-spark-1.3-contributor-free", "label": "Muse Spark 1.3 Contributor (free)"},
     ],
     # 'gemini' is the hermes_cli provider ID for Google AI Studio
     # Model IDs are bare — sent directly to:
@@ -6965,6 +6994,12 @@ def get_available_models(*, prefer_cache: bool = False, force_refresh: bool = Fa
 
                 _canonical_to_raw_provider_key.setdefault(_canonical, _pid_key)
                 detected_providers.add(_canonical)
+
+        # OpenCode Free (zen keyless free lane) needs no API key — it is
+        # always available. Add unconditionally so the picker group renders
+        # regardless of which detection path ran (auth store vs profile .env),
+        # mirroring the gateway picker which lists "OpenCode Free" always.
+        detected_providers.add("opencode-free")
 
         def _configured_provider_for_base_url(base_url: object) -> str:
             target = _normalize_base_url_for_match(base_url)
